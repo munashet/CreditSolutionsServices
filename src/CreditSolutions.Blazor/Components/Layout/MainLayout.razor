@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+
+<div class="shell">
+    <aside class="sidebar">
+        <div class="brand">CSS Credit Solutions</div>
+        <nav>
+            <NavLink href="" Match="NavLinkMatch.All">Dashboard</NavLink>
+            <NavLink href="customers">Customers</NavLink>
+            <NavLink href="promises">Promises</NavLink>
+            <a href="/jobs">Hangfire Jobs</a>
+            <a href="/logout">Sign Out</a>
+        </nav>
+    </aside>
+    <section class="workspace">
+        @Body
+    </section>
+</div>

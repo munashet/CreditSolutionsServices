@@ -1,0 +1,62 @@
+@page "/login"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Navigation
+
+<main class="login-page">
+    <section class="login-panel">
+        <h1>CSS Credit Solutions</h1>
+        <p>Collector sign in</p>
+
+        <EditForm Model="_model" OnValidSubmit="SignInAsync" FormName="login">
+            <DataAnnotationsValidator />
+            <input @bind="_model.Email" placeholder="Email" />
+            <input type="password" @bind="_model.Password" placeholder="Password" />
+            <button type="submit">Sign In</button>
+        </EditForm>
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <p class="notice">@_error</p>
+        }
+    </section>
+</main>
+
+@code {
+    private readonly LoginModel _model = new() { Email = "collector@css.local" };
+    private string? _error;
+
+    private async Task SignInAsync()
+    {
+        if (!string.Equals(_model.Email, "collector@css.local", StringComparison.OrdinalIgnoreCase) ||
+            _model.Password != "Password123!")
+        {
+            _error = "Invalid demo credentials.";
+            return;
+        }
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, "10000000-0000-0000-0000-000000000001"),
+            new(ClaimTypes.Name, "Demo Collector"),
+            new(ClaimTypes.Email, _model.Email)
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContextAccessor.HttpContext!.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal);
+
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+
+    private sealed class LoginModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

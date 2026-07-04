@@ -1,0 +1,142 @@
+@page "/promises"
+@attribute [Authorize]
+@inject GetPromisesHandler GetPromises
+@inject CreatePromiseHandler CreatePromise
+@inject CapturePaymentHandler CapturePayment
+
+<main class="content">
+    <header class="page-header">
+        <h1>Promise Management</h1>
+        <p>Capture arrangements and payments, then let Hangfire monitor overdue promises</p>
+    </header>
+
+    <section class="two-column">
+        <EditForm Model="_newPromise" OnValidSubmit="CreatePromiseAsync" FormName="create-promise">
+            <DataAnnotationsValidator />
+            <h2>New Promise</h2>
+            <input @bind="_newPromise.CustomerId" placeholder="Customer ID" />
+            <input type="number" step="0.01" @bind="_newPromise.Amount" placeholder="Amount" />
+            <input type="date" @bind="_newPromise.PromiseDate" />
+            <input @bind="_newPromise.CapturedByUserId" placeholder="Collector User ID" />
+            <button type="submit">Capture Promise</button>
+        </EditForm>
+
+        <EditForm Model="_payment" OnValidSubmit="CapturePaymentAsync" FormName="capture-payment">
+            <DataAnnotationsValidator />
+            <h2>Capture Payment</h2>
+            <input @bind="_payment.CustomerId" placeholder="Customer ID" />
+            <input type="number" step="0.01" @bind="_payment.Amount" placeholder="Amount" />
+            <input type="date" @bind="_payment.PaidOn" />
+            <input @bind="_payment.Reference" placeholder="Reference" />
+            <button type="submit">Capture Payment</button>
+        </EditForm>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <p class="notice">@_message</p>
+    }
+
+    <section class="toolbar">
+        <select @bind="_statusFilter">
+            <option value="">Any status</option>
+            <option value="@PromiseStatus.Pending">Pending</option>
+            <option value="@PromiseStatus.Kept">Kept</option>
+            <option value="@PromiseStatus.Broken">Broken</option>
+        </select>
+        <button @onclick="LoadPromisesAsync">Refresh</button>
+    </section>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Customer ID</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var promise in _promises)
+            {
+                <tr>
+                    <td>@promise.CustomerName</td>
+                    <td>@promise.CustomerId</td>
+                    <td>@promise.Amount.ToString("C")</td>
+                    <td>@promise.PromiseDate</td>
+                    <td><span class="status">@promise.Status</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</main>
+
+@code {
+    private IReadOnlyList<PromiseDto> _promises = [];
+    private readonly NewPromiseModel _newPromise = new();
+    private readonly PaymentModel _payment = new();
+    private PromiseStatus? _statusFilter;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync() => await LoadPromisesAsync();
+
+    private async Task LoadPromisesAsync()
+    {
+        _promises = await GetPromises.HandleAsync(new PromiseListQuery(_statusFilter, null, null));
+    }
+
+    private async Task CreatePromiseAsync()
+    {
+        try
+        {
+            await CreatePromise.HandleAsync(new CreatePromiseCommand(
+                Guid.Parse(_newPromise.CustomerId),
+                _newPromise.Amount,
+                DateOnly.FromDateTime(_newPromise.PromiseDate),
+                Guid.Parse(_newPromise.CapturedByUserId)));
+
+            _message = "Promise captured.";
+            await LoadPromisesAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+        }
+    }
+
+    private async Task CapturePaymentAsync()
+    {
+        try
+        {
+            await CapturePayment.HandleAsync(new CapturePaymentCommand(
+                Guid.Parse(_payment.CustomerId),
+                _payment.Amount,
+                DateOnly.FromDateTime(_payment.PaidOn),
+                _payment.Reference));
+
+            _message = "Payment captured.";
+            await LoadPromisesAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+        }
+    }
+
+    private sealed class NewPromiseModel
+    {
+        public string CustomerId { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public DateTime PromiseDate { get; set; } = DateTime.Today;
+        public string CapturedByUserId { get; set; } = "10000000-0000-0000-0000-000000000001";
+    }
+
+    private sealed class PaymentModel
+    {
+        public string CustomerId { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public DateTime PaidOn { get; set; } = DateTime.Today;
+        public string Reference { get; set; } = string.Empty;
+    }
+}

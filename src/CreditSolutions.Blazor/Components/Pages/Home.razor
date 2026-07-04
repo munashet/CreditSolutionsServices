@@ -1,0 +1,35 @@
+@page "/"
+@attribute [Authorize]
+@inject GetDashboardSummaryHandler Dashboard
+
+<main class="content">
+    <header class="page-header">
+        <h1>Operational Dashboard</h1>
+        <p>Promise to Pay recovery overview</p>
+    </header>
+
+    @if (_summary is null)
+    {
+        <p>Loading dashboard...</p>
+    }
+    else
+    {
+        <section class="metrics">
+            <article><span>Customers</span><strong>@_summary.CustomerCount</strong></article>
+            <article><span>Pending</span><strong>@_summary.PendingPromises</strong></article>
+            <article><span>Kept</span><strong>@_summary.KeptPromises</strong></article>
+            <article><span>Broken</span><strong>@_summary.BrokenPromises</strong></article>
+            <article><span>Pending Value</span><strong>@_summary.PendingPromiseValue.ToString("C")</strong></article>
+            <article><span>Queued Reminders</span><strong>@_summary.PendingReminders</strong></article>
+        </section>
+    }
+</main>
+
+@code {
+    private DashboardSummary? _summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _summary = await Dashboard.HandleAsync();
+    }
+}

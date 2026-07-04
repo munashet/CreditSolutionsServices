@@ -1,0 +1,115 @@
+@page "/customers"
+@attribute [Authorize]
+@inject SearchCustomersHandler SearchCustomers
+@inject CreateCustomerHandler CreateCustomer
+
+<main class="content">
+    <header class="page-header">
+        <h1>Customers</h1>
+        <p>Search accounts and create new debtors for PTP management</p>
+    </header>
+
+    <section class="toolbar">
+        <input @bind="_searchTerm" @bind:event="oninput" placeholder="Search name, account, or mobile" />
+        <select @bind="_statusFilter">
+            <option value="">Any promise status</option>
+            <option value="@PromiseStatus.Pending">Pending</option>
+            <option value="@PromiseStatus.Kept">Kept</option>
+            <option value="@PromiseStatus.Broken">Broken</option>
+        </select>
+        <button @onclick="LoadCustomersAsync">Search</button>
+    </section>
+
+    <EditForm Model="_newCustomer" OnValidSubmit="CreateCustomerAsync" FormName="create-customer">
+        <DataAnnotationsValidator />
+        <section class="form-grid">
+            <input @bind="_newCustomer.AccountNumber" placeholder="Account number" />
+            <input @bind="_newCustomer.FullName" placeholder="Full name" />
+            <input @bind="_newCustomer.MobileNumber" placeholder="Mobile number" />
+            <input type="number" step="0.01" @bind="_newCustomer.Balance" placeholder="Balance" />
+            <button type="submit">Create Customer</button>
+        </section>
+    </EditForm>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <p class="notice">@_message</p>
+    }
+
+    <table>
+        <thead>
+            <tr>
+                <th>Account</th>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Balance</th>
+                <th>Pending</th>
+                <th>Broken</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in _customers)
+            {
+                <tr>
+                    <td>@customer.AccountNumber</td>
+                    <td>@customer.FullName</td>
+                    <td>@customer.MobileNumber</td>
+                    <td>@customer.Balance.ToString("C")</td>
+                    <td>@customer.PendingPromises</td>
+                    <td>@customer.BrokenPromises</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</main>
+
+@code {
+    private readonly NewCustomerModel _newCustomer = new();
+    private IReadOnlyList<CustomerDto> _customers = [];
+    private string? _searchTerm;
+    private PromiseStatus? _statusFilter;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync() => await LoadCustomersAsync();
+
+    private async Task LoadCustomersAsync()
+    {
+        _customers = await SearchCustomers.HandleAsync(new CustomerSearchQuery(_searchTerm, _statusFilter));
+    }
+
+    private async Task CreateCustomerAsync()
+    {
+        try
+        {
+            await CreateCustomer.HandleAsync(new CreateCustomerCommand(
+                _newCustomer.AccountNumber,
+                _newCustomer.FullName,
+                _newCustomer.MobileNumber,
+                _newCustomer.Balance));
+
+            _message = "Customer created.";
+            _newCustomer.Clear();
+            await LoadCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+        }
+    }
+
+    private sealed class NewCustomerModel
+    {
+        public string AccountNumber { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string MobileNumber { get; set; } = string.Empty;
+        public decimal Balance { get; set; }
+
+        public void Clear()
+        {
+            AccountNumber = string.Empty;
+            FullName = string.Empty;
+            MobileNumber = string.Empty;
+            Balance = 0;
+        }
+    }
+}

@@ -1,0 +1,203 @@
+:root {
+    color-scheme: light;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f6f7f9;
+    color: #20242a;
+}
+
+body {
+    margin: 0;
+}
+
+.shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+}
+
+.sidebar {
+    background: #17212f;
+    color: white;
+    padding: 24px;
+}
+
+.brand {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 32px;
+}
+
+nav {
+    display: grid;
+    gap: 8px;
+}
+
+nav a {
+    color: #d9e2ef;
+    padding: 10px 12px;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+nav a.active,
+nav a:hover {
+    background: #2a3a4f;
+    color: white;
+}
+
+.workspace {
+    min-width: 0;
+}
+
+.content {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px;
+}
+
+.login-page {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    padding: 24px;
+}
+
+.login-panel {
+    background: white;
+    border: 1px solid #dfe4ea;
+    border-radius: 8px;
+    display: grid;
+    gap: 14px;
+    max-width: 380px;
+    padding: 28px;
+    width: 100%;
+}
+
+.login-panel form {
+    display: grid;
+    gap: 10px;
+}
+
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-header h1 {
+    margin: 0 0 6px;
+    font-size: 2rem;
+}
+
+.page-header p {
+    margin: 0;
+    color: #5b6470;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.metrics article,
+.two-column form {
+    background: white;
+    border: 1px solid #dfe4ea;
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.metrics span {
+    color: #5b6470;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.metrics strong {
+    font-size: 1.6rem;
+}
+
+.toolbar,
+.form-grid,
+.two-column {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.toolbar {
+    grid-template-columns: minmax(220px, 1fr) 220px auto;
+}
+
+.form-grid {
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+}
+
+.two-column {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.two-column form {
+    display: grid;
+    gap: 10px;
+}
+
+input,
+select,
+button {
+    border: 1px solid #c8d0d9;
+    border-radius: 6px;
+    font: inherit;
+    padding: 10px 12px;
+}
+
+button {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #dfe4ea;
+}
+
+th,
+td {
+    border-bottom: 1px solid #edf0f3;
+    padding: 12px;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: #eef2f6;
+}
+
+.notice {
+    background: #fff8dc;
+    border: 1px solid #e6d28f;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.status {
+    background: #e8f0fe;
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+
+@media (max-width: 820px) {
+    .shell,
+    .toolbar,
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: static;
+    }
+}
