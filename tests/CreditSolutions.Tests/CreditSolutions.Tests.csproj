@@ -16,5 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\CreditSolutions.Application\CreditSolutions.Application.csproj" />
     <ProjectReference Include="..\..\src\CreditSolutions.Domain\CreditSolutions.Domain.csproj" />
+    <ProjectReference Include="..\..\src\CreditSolutions.Infrastructure\CreditSolutions.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

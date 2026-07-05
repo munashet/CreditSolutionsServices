@@ -101,7 +101,7 @@ The assessment requires authentication. This submission includes a `Users` table
 
 ## AI Declaration
 
-AI assistance was used to scaffold and implement this solution. All generated code was reviewed by the candidate before submission.
+AI assistance was used to scaffold, debug, and validate this solution. The generated code was reviewed and adjusted by the candidate, and the final implementation was verified locally through builds, app startup checks, and regression tests.
 
 Prompts used:
 
@@ -111,6 +111,14 @@ Using Clean Architecture, we are going to implement the solution in the README P
 
 ```text
 Use Hangfire
+```
+
+```text
+Fix the local SQL Server / LocalDB setup so the app starts and reminder processing works
+```
+
+```text
+Add schema initialization so ReminderQueue exists before the reminder job runs
 ```
 
 ## Candidate Declaration

@@ -12,8 +12,8 @@
 
         <EditForm Model="_model" OnValidSubmit="SignInAsync" FormName="login">
             <DataAnnotationsValidator />
-            <input @bind="_model.Email" placeholder="Email" />
-            <input type="password" @bind="_model.Password" placeholder="Password" />
+            <input value="@_model.Email" @oninput="OnEmailChanged" placeholder="Email" autocomplete="email" />
+            <input type="password" value="@_model.Password" @oninput="OnPasswordChanged" placeholder="Password" autocomplete="current-password" />
             <button type="submit">Sign In</button>
         </EditForm>
 
@@ -27,6 +27,16 @@
 @code {
     private readonly LoginModel _model = new() { Email = "collector@css.local" };
     private string? _error;
+
+    private void OnEmailChanged(ChangeEventArgs args)
+    {
+        _model.Email = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnPasswordChanged(ChangeEventArgs args)
+    {
+        _model.Password = args.Value?.ToString() ?? string.Empty;
+    }
 
     private async Task SignInAsync()
     {

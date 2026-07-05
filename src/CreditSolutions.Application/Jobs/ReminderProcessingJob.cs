@@ -13,6 +13,11 @@ public sealed class ReminderProcessingJob(
 {
     public async Task ProcessPendingRemindersAsync(CancellationToken cancellationToken = default)
     {
+        if (dbContext is DbContext db)
+        {
+            await db.Database.EnsureCreatedAsync(cancellationToken);
+        }
+
         var reminders = await dbContext.ReminderQueue
             .Where(r => r.Status == ReminderStatus.Pending)
             .OrderBy(r => r.CreatedAt)
