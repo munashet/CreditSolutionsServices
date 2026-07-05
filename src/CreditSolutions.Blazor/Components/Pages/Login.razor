@@ -3,19 +3,18 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Navigation
 
 <main class="login-page">
     <section class="login-panel">
         <h1>CSS Credit Solutions</h1>
         <p>Collector sign in</p>
 
-        <EditForm Model="_model" OnValidSubmit="SignInAsync" FormName="login">
-            <DataAnnotationsValidator />
-            <input value="@_model.Email" @oninput="OnEmailChanged" placeholder="Email" autocomplete="email" />
-            <input type="password" value="@_model.Password" @oninput="OnPasswordChanged" placeholder="Password" autocomplete="current-password" />
+        <form method="post" action="/login" data-enhance @formname="login">
+            <AntiforgeryToken />
+            <input name="Email" placeholder="Email" autocomplete="email" value="collector@css.local" />
+            <input name="Password" type="password" placeholder="Password" autocomplete="current-password" />
             <button type="submit">Sign In</button>
-        </EditForm>
+        </form>
 
         @if (!string.IsNullOrWhiteSpace(_error))
         {
@@ -25,25 +24,24 @@
 </main>
 
 @code {
-    private readonly LoginModel _model = new() { Email = "collector@css.local" };
+    [SupplyParameterFromForm]
+    public string Email { get; set; } = string.Empty;
+
+    [SupplyParameterFromForm]
+    public string Password { get; set; } = string.Empty;
+
     private string? _error;
 
-    private void OnEmailChanged(ChangeEventArgs args)
+    protected override async Task OnInitializedAsync()
     {
-        _model.Email = args.Value?.ToString() ?? string.Empty;
-    }
+        // Only process login when form data was posted (not on initial GET)
+        if (HttpContextAccessor.HttpContext?.Request.Method != "POST")
+            return;
 
-    private void OnPasswordChanged(ChangeEventArgs args)
-    {
-        _model.Password = args.Value?.ToString() ?? string.Empty;
-    }
-
-    private async Task SignInAsync()
-    {
-        if (!string.Equals(_model.Email, "collector@css.local", StringComparison.OrdinalIgnoreCase) ||
-            _model.Password != "Password123!")
+        if (!string.Equals(Email, "collector@css.local", StringComparison.OrdinalIgnoreCase) ||
+            Password != "Password123!")
         {
-            _error = "Invalid demo credentials.";
+            _error = $"Invalid demo credentials. Email=[{Email}] PwdLen={Password.Length}";
             return;
         }
 
@@ -51,7 +49,7 @@
         {
             new(ClaimTypes.NameIdentifier, "10000000-0000-0000-0000-000000000001"),
             new(ClaimTypes.Name, "Demo Collector"),
-            new(ClaimTypes.Email, _model.Email)
+            new(ClaimTypes.Email, Email)
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -61,12 +59,6 @@
             CookieAuthenticationDefaults.AuthenticationScheme,
             principal);
 
-        Navigation.NavigateTo("/", forceLoad: true);
-    }
-
-    private sealed class LoginModel
-    {
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+        HttpContextAccessor.HttpContext!.Response.Redirect("/");
     }
 }

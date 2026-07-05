@@ -1,8 +1,10 @@
 @page "/promises"
+@rendermode InteractiveServer
 @attribute [Authorize]
+@using CreditSolutions.Application.Abstractions
+@using Microsoft.EntityFrameworkCore
 @inject GetPromisesHandler GetPromises
-@inject CreatePromiseHandler CreatePromise
-@inject CapturePaymentHandler CapturePayment
+@inject IServiceScopeFactory ScopeFactory
 
 <main class="content">
     <header class="page-header">
@@ -13,18 +15,19 @@
     <section class="two-column">
         <EditForm Model="_newPromise" OnValidSubmit="CreatePromiseAsync" FormName="create-promise">
             <DataAnnotationsValidator />
+            <AntiforgeryToken />
             <h2>New Promise</h2>
-            <input @bind="_newPromise.CustomerId" placeholder="Customer ID" />
+            <input @bind="_newPromise.AccountNumber" placeholder="Account Number (e.g. ACC-1001)" />
             <input type="number" step="0.01" @bind="_newPromise.Amount" placeholder="Amount" />
             <input type="date" @bind="_newPromise.PromiseDate" />
-            <input @bind="_newPromise.CapturedByUserId" placeholder="Collector User ID" />
             <button type="submit">Capture Promise</button>
         </EditForm>
 
         <EditForm Model="_payment" OnValidSubmit="CapturePaymentAsync" FormName="capture-payment">
             <DataAnnotationsValidator />
+            <AntiforgeryToken />
             <h2>Capture Payment</h2>
-            <input @bind="_payment.CustomerId" placeholder="Customer ID" />
+            <input @bind="_payment.AccountNumber" placeholder="Account Number (e.g. ACC-1001)" />
             <input type="number" step="0.01" @bind="_payment.Amount" placeholder="Amount" />
             <input type="date" @bind="_payment.PaidOn" />
             <input @bind="_payment.Reference" placeholder="Reference" />
@@ -50,8 +53,8 @@
     <table>
         <thead>
             <tr>
+                <th>Account</th>
                 <th>Customer</th>
-                <th>Customer ID</th>
                 <th>Amount</th>
                 <th>Due Date</th>
                 <th>Status</th>
@@ -61,8 +64,8 @@
             @foreach (var promise in _promises)
             {
                 <tr>
+                    <td>@promise.AccountNumber</td>
                     <td>@promise.CustomerName</td>
-                    <td>@promise.CustomerId</td>
                     <td>@promise.Amount.ToString("C")</td>
                     <td>@promise.PromiseDate</td>
                     <td><span class="status">@promise.Status</span></td>
@@ -79,6 +82,8 @@
     private PromiseStatus? _statusFilter;
     private string? _message;
 
+    private static readonly Guid CollectorUserId = Guid.Parse("10000000-0000-0000-0000-000000000001");
+
     protected override async Task OnInitializedAsync() => await LoadPromisesAsync();
 
     private async Task LoadPromisesAsync()
@@ -86,15 +91,33 @@
         _promises = await GetPromises.HandleAsync(new PromiseListQuery(_statusFilter, null, null));
     }
 
+    private async Task<Guid?> GetCustomerIdByAccountAsync(string accountNumber)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        var customer = await db.Customers
+            .FirstOrDefaultAsync(c => c.AccountNumber == accountNumber.Trim());
+        return customer?.Id;
+    }
+
     private async Task CreatePromiseAsync()
     {
         try
         {
-            await CreatePromise.HandleAsync(new CreatePromiseCommand(
-                Guid.Parse(_newPromise.CustomerId),
+            var customerId = await GetCustomerIdByAccountAsync(_newPromise.AccountNumber);
+            if (customerId is null)
+            {
+                _message = $"Customer with account '{_newPromise.AccountNumber}' was not found.";
+                return;
+            }
+
+            using var scope = ScopeFactory.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<CreatePromiseHandler>();
+            await handler.HandleAsync(new CreatePromiseCommand(
+                customerId.Value,
                 _newPromise.Amount,
                 DateOnly.FromDateTime(_newPromise.PromiseDate),
-                Guid.Parse(_newPromise.CapturedByUserId)));
+                CollectorUserId));
 
             _message = "Promise captured.";
             await LoadPromisesAsync();
@@ -109,8 +132,17 @@
     {
         try
         {
-            await CapturePayment.HandleAsync(new CapturePaymentCommand(
-                Guid.Parse(_payment.CustomerId),
+            var customerId = await GetCustomerIdByAccountAsync(_payment.AccountNumber);
+            if (customerId is null)
+            {
+                _message = $"Customer with account '{_payment.AccountNumber}' was not found.";
+                return;
+            }
+
+            using var scope = ScopeFactory.CreateScope();
+            var handler = scope.ServiceProvider.GetRequiredService<CapturePaymentHandler>();
+            await handler.HandleAsync(new CapturePaymentCommand(
+                customerId.Value,
                 _payment.Amount,
                 DateOnly.FromDateTime(_payment.PaidOn),
                 _payment.Reference));
@@ -126,15 +158,14 @@
 
     private sealed class NewPromiseModel
     {
-        public string CustomerId { get; set; } = string.Empty;
+        public string AccountNumber { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public DateTime PromiseDate { get; set; } = DateTime.Today;
-        public string CapturedByUserId { get; set; } = "10000000-0000-0000-0000-000000000001";
     }
 
     private sealed class PaymentModel
     {
-        public string CustomerId { get; set; } = string.Empty;
+        public string AccountNumber { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public DateTime PaidOn { get; set; } = DateTime.Today;
         public string Reference { get; set; } = string.Empty;

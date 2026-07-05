@@ -27,6 +27,7 @@ public sealed class GetPromisesHandler(IApplicationDbContext dbContext)
                 x.Promise.Id,
                 x.Promise.CustomerId,
                 x.Customer.FullName,
+                x.Customer.AccountNumber,
                 x.Promise.Amount,
                 x.Promise.PromiseDate,
                 x.Promise.Status))

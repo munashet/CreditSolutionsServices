@@ -1,6 +1,7 @@
 using CreditSolutions.Application.Abstractions;
 using CreditSolutions.Domain.Auditing;
 using CreditSolutions.Domain.Customers;
+using CreditSolutions.Domain.Promises;
 using Microsoft.EntityFrameworkCore;
 
 namespace CreditSolutions.Application.Promises;
@@ -12,12 +13,18 @@ public sealed class CreatePromiseHandler(IApplicationDbContext dbContext, IDateT
     public async Task<Guid> HandleAsync(CreatePromiseCommand command, CancellationToken cancellationToken = default)
     {
         var customer = await dbContext.Customers
-            .Include(c => c.Promises)
             .SingleOrDefaultAsync(c => c.Id == command.CustomerId, cancellationToken);
 
         if (customer is null) throw new InvalidOperationException("Customer was not found.");
 
-        var promise = customer.CreatePromise(command.Amount, command.PromiseDate, clock.Today, command.CapturedByUserId);
+        // Business rule validation (duplicated from Customer.CreatePromise)
+        if (command.Amount <= 0) throw new InvalidOperationException("Promise amount must be greater than zero.");
+        if (command.Amount > customer.Balance) throw new InvalidOperationException("Promise amount cannot exceed the customer balance.");
+        if (command.PromiseDate < clock.Today) throw new InvalidOperationException("Promise date cannot be in the past.");
+
+        var promise = new Promise(command.CustomerId, command.Amount, command.PromiseDate, command.CapturedByUserId);
+        dbContext.Promises.Add(promise);
+
         dbContext.AuditLog.Add(new AuditLog(
             "PromiseCreated",
             nameof(Customer),

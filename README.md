@@ -9,7 +9,7 @@ The implementation follows Clean Architecture:
 - `CreditSolutions.Domain`: core entities and business rules.
 - `CreditSolutions.Application`: use cases, DTOs, abstractions, and background job workflows.
 - `CreditSolutions.Infrastructure`: EF Core SQL Server persistence, seed data, Hangfire, simulated SMS sender.
-- `CreditSolutions.Blazor`: Blazor Server UI and composition root.
+- `CreditSolutions.Blazor`: Blazor Web App UI (interactive server rendering) and composition root.
 - `CreditSolutions.Tests`: focused acceptance-criteria tests.
 
 ## Requirements Covered
@@ -110,7 +110,7 @@ Using Clean Architecture, we are going to implement the solution in the README P
 ```
 
 ```text
-Use Hangfire
+Using Hangfire
 ```
 
 ```text
@@ -119,6 +119,38 @@ Fix the local SQL Server / LocalDB setup so the app starts and reminder processi
 
 ```text
 Add schema initialization so ReminderQueue exists before the reminder job runs
+```
+
+```text
+Fix login form — demo credentials rejected. Switched to plain HTML form
+with [SupplyParameterFromForm] for Blazor Web App static SSR compatibility
+```
+
+```text
+Fix NavigationException on login/logout redirect by using
+HttpContext.Response.Redirect instead of NavigationManager.NavigateTo
+```
+
+```text
+Add @rendermode InteractiveServer and AntiforgeryToken to Customers and
+Promises pages for proper form handling in Blazor Web App
+```
+
+```text
+Replace Customer ID GUID inputs on Promise Management page with Account
+Number lookup; add AccountNumber column to PromiseDto and promises table
+```
+
+```text
+Fix DbUpdateConcurrencyException in CreatePromise and CapturePayment
+handlers — EF Core PropertyAccessMode.Field on backing collections caused
+spurious optimistic concurrency errors. Bypassed domain collection
+navigation and added entities directly via DbContext
+```
+
+```text
+Write integration tests for CreatePromiseHandler and CapturePaymentHandler
+to verify handlers work correctly across fresh and reused DbContext scopes
 ```
 
 ## Candidate Declaration

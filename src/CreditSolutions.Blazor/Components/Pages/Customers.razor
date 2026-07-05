@@ -1,4 +1,5 @@
 @page "/customers"
+@rendermode InteractiveServer
 @attribute [Authorize]
 @inject SearchCustomersHandler SearchCustomers
 @inject CreateCustomerHandler CreateCustomer
@@ -20,8 +21,9 @@
         <button @onclick="LoadCustomersAsync">Search</button>
     </section>
 
-    <EditForm Model="_newCustomer" OnValidSubmit="CreateCustomerAsync" FormName="create-customer">
-        <DataAnnotationsValidator />
+        <EditForm Model="_newCustomer" OnValidSubmit="CreateCustomerAsync" FormName="create-customer">
+            <DataAnnotationsValidator />
+            <AntiforgeryToken />
         <section class="form-grid">
             <input @bind="_newCustomer.AccountNumber" placeholder="Account number" />
             <input @bind="_newCustomer.FullName" placeholder="Full name" />
